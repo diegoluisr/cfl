@@ -8,8 +8,10 @@ export default class CF {
 
   public init(app: Application): Application {
 
-    app.get('/items/with-contollers', this.auth, this.controllers.getItems);
+    app.get('/items/with-controllers', this.auth, this.controllers.getItems);
+    app.get('/items/controllers-without-auth', this.controllers.getItems);
     app.get('/items/with-middlewares', this.middlewares.getItems);
+    app.get('/items/with-middlewares-alt', this.middlewares.getItemsAlt);
 
     return app;
   }
@@ -26,7 +28,7 @@ export default class CF {
     this._authorized = value
   }
 
-  private async auth(req: Request, res: Response, next: NextFunction) {
+  public async auth(req: Request, res: Response, next: NextFunction) {
 
     if (!('authorization' in req.headers)) {
       next();
@@ -54,6 +56,7 @@ export default class CF {
   }
 
   public middlewares = {
+    // This implementation fails in Codacy.
     getItems: async (req: Request, res: Response) => {
       return new Promise<void>((resolve) => {
         this.auth(req, res, async () => {
@@ -67,6 +70,7 @@ export default class CF {
         });
       });
     },
+    // This implementation fails.
     getItemsAlt: async (req: Request, res: Response) => {
       this.auth(req, res, async () => {
         if (this.isAuthorized()) {
@@ -79,6 +83,7 @@ export default class CF {
     }
   }
 
+  // It works for testing and may for Codacy.
   public controllers = {
     getItems: async (req: Request, res: Response) => {
       if (this.isAuthorized()) {

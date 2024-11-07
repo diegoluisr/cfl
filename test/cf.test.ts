@@ -1,19 +1,31 @@
-import { describe, expect, it, jest } from "@jest/globals"
-import { Request, Response } from "express";
+import { afterEach, beforeEach, describe, expect, it, jest } from "@jest/globals"
 import CF from "../src/CF";
 import { SP } from "../src";
+jest.mock('express', () => {
+  return require('jest-express');
+});
+import express, { Request, Response } from "express";
 
+let cf:CF;
+let sp: SP;
 
 describe('CF class', () => {
+
+  beforeEach(() => {
+    cf = new CF();
+    sp = new SP();
+    sp.id = "ID";
+    sp.name = "NAME";
+    cf.addSp(sp);
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
   it ('must be defined', () => {
     expect(CF).toBeDefined();
   });
-
-  const cf: CF = new CF();
-  const sp: SP = new SP();
-  sp.id = "ID";
-  sp.name = "NAME";
-  cf.addSp(sp);
 
   it ('Getting data via controller', async () => {
 
@@ -82,5 +94,30 @@ describe('CF class', () => {
     expect(mockRes.json).toBeCalled();
     expect(responseObject).toStrictEqual(expectedData);
   });
-});
 
+  describe('Express init()', () => {
+    it('with middlewares', () => {
+      let app = express();
+
+      cf.auth = jest.fn();
+      cf.controllers.getItems = jest.fn();
+
+      app = cf.init(app);
+      expect(app.get).toBeCalledWith('/items/controllers-without-auth', cf.controllers.getItems)
+    });
+
+  });
+
+  describe('Express init()', () => {
+    it('with controllers', () => {
+      let app = express();
+
+      cf.auth = jest.fn();
+      cf.controllers.getItems = jest.fn();
+
+      app = cf.init(app);
+      expect(app.get).toBeCalledWith('/items/with-controllers', cf.auth, cf.controllers.getItems);
+    });
+
+  });
+});
